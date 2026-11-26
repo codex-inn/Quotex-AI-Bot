@@ -47,3 +47,14 @@ uvicorn main:app --reload --port 8000
 Set `TWELVEDATA_API_KEY` too if using the existing spot-FX integration. Do not commit a real `.env` file or provider token.
 
 Signals are transparent rule scores, not probabilities or financial advice. No trades are placed. Legacy Python offline backtest files remain in the repository.
+
+## Dashboard features
+- Responsive dark trading-analysis workspace for desktop and mobile.
+- OHLC candlestick chart with EMA 9, EMA 21 and EMA 50 overlays.
+- Candle recognition: doji, hammer, shooting star, bullish/bearish engulfing, inside bar, morning/evening star, and three white soldiers/three black crows when the candle sequence matches.
+- RSI 14, MACD, EMA trend context, and recent swing support/resistance levels.
+- Transparent CALL / PUT / WAIT rule scoring with individual reasons. The score is a count of confirmations, not an AI probability or a promise of accuracy.
+- CSV import with OHLC validation and a historical next-candle direction backtest.
+- Demo candles are explicitly labelled synthetic. Imported history and provider data are shown separately.
+
+The browser-side analysis works without a provider by using synthetic demo candles or a CSV file. To receive Quotex OTC candles, configure the backend and a valid OTCharts token as described above. The website does not collect Quotex login credentials, scrape the trading platform, or execute orders.
