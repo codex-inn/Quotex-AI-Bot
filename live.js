@@ -11,7 +11,7 @@
   const spotFrames=Array.from(tf.options).map(o=>({value:o.value,label:o.textContent}));
   const liveStatus=document.createElement('span'); liveStatus.className='pill'; liveStatus.id='liveStatus'; liveStatus.textContent='LIVE: NOT CONNECTED'; document.querySelector('header .status').appendChild(liveStatus);
   let socket=null,lastTick=0,lastPrice=null,timer=null,generation=0,otcEnabled=false;
-  const status=(s,c)=>{liveStatus.textContent=s;liveStatus.style.color=c||'#a9bdd5'};
+  const status=(s,c)=>{liveStatus.textContent=s;liveStatus.style.color=c||'#a9bdd5';const head=document.getElementById('headerStatus');if(head)head.textContent=s;}
   const market=()=>document.getElementById('marketSource').value;
   const interval=()=>({'1m':'1min','5m':'5min','15m':'15min'})[tf.value]||'1min';
   const bucketSize=()=>({'1min':60000,'5min':300000,'15min':900000})[interval()];
