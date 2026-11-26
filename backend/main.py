@@ -159,8 +159,6 @@ async def price_stream(client_ws: WebSocket, symbol: str = "EUR/USD"):
                     await client_ws.send_json(data)
                 elif data.get("event") == "subscribe-status":
                     await client_ws.send_json(data)
-                elif data.get("event") == "subscribe-status":
-                    await client_ws.send_json(data)
                 elif data.get("event") == "error" or data.get("status") == "error":
                     await client_ws.send_json({
                         "event": "error",
