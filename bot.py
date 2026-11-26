@@ -28,10 +28,13 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Quotex AI Analysis Bot — DEMO ONLY. Commands: /scan, /pairs, /help. No orders are executed.")
 
 async def help_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("/scan — analyse configured forex pairs\n/pairs — list pairs\nSignals are educational rule-based alerts, not probabilities or financial advice.")
+    await update.message.reply_text("/scan — analyse configured forex pairs\n/pairs — list pairs\n/chatid — show this chat ID for deployment setup\nSignals are educational rule-based alerts, not probabilities or financial advice.")
 
 async def pairs_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Configured pairs: "+", ".join(PAIRS))
+
+async def chatid_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(f"Your Telegram chat ID is: {update.effective_chat.id}\\nAdd this as TELEGRAM_CHAT_ID in your cloud host environment variables.")
 
 async def scan(update: Update, context: ContextTypes.DEFAULT_TYPE):
     msg=await update.message.reply_text("Fetching 1-minute candles and analysing…")
@@ -67,6 +70,7 @@ def main():
     app.add_handler(CommandHandler("start",start))
     app.add_handler(CommandHandler("help",help_cmd))
     app.add_handler(CommandHandler("pairs",pairs_cmd))
+    app.add_handler(CommandHandler("chatid",chatid_cmd))
     app.add_handler(CommandHandler("scan",scan))
     seconds=max(60,int(os.getenv("POLL_SECONDS","60")))
     if app.job_queue and CHAT_ID:
