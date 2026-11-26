@@ -1,60 +1,40 @@
-# Quotex AI Analysis Bot (Demo Only)
+# Quotex AI — Web Market Analyzer
 
-Telegram-only, demo-first forex analysis for 1-minute candles. This project generates educational CALL/PUT *analysis alerts* from external market data. It does not connect to Quotex, place trades, or execute real-money orders.
+A browser-only, demo-first market-analysis dashboard. No Telegram bot, BotFather token, broker login, or trade execution.
 
-> **Risk notice:** Signals are uncertain and are not financial advice. A scoring value is not a win probability. External spot-FX prices may differ from Quotex prices, especially OTC instruments. Do not assume backtest results predict live outcomes.
+## Open the website
+After enabling GitHub Pages:
+1. Open **Settings → Pages** in this repository.
+2. Under **Build and deployment**, choose **Deploy from a branch**.
+3. Select branch `main` and folder `/ (root)`, then Save.
+4. Your site will be available at: https://codex-inn.github.io/Quotex-AI-Bot/
 
 ## Features
-- Major FX pairs: EUR/USD, GBP/USD, USD/JPY, USD/CHF, AUD/USD, USD/CAD, NZD/USD
-- EMA 9/21/50, RSI(14), MACD(12,26,9)
-- Basic bullish/bearish engulfing, pin-bar and doji detection
-- Transparent weighted rule score; CALL, PUT or NO TRADE
-- Telegram alerts with candle timestamp and explanation
-- CSV historical backtesting with next-candle outcome and configurable payout
-- Docker deployment for a persistent worker
+- Responsive browser dashboard
+- Major forex pair selector and 1m / 5m / 15m display options
+- Demo OHLC candles and chart
+- EMA 9/21/50, RSI(14), MACD
+- Bullish/bearish engulfing, pin bar and doji pattern detection
+- Transparent CALL / PUT / NO TRADE rule scoring
+- CSV import for historical OHLC data
+- Simplified next-candle backtest and results summary
 
-## Quick start
-1. Create a Telegram bot with [@BotFather](https://t.me/BotFather), then send it a message.
-2. Get a market-data API key from [Twelve Data](https://twelvedata.com/).
-3. Copy `.env.example` to `.env` and set secrets locally.
-4. Install and run:
+## Data and safety
+The dashboard initially generates **synthetic demo candles**. It does not show live prices. Import a CSV with columns `datetime,open,high,low,close` to analyse historical candles. The timeframe selector changes the display label; uploaded CSV timestamps are not resampled automatically.
 
+A rule score is not a probability or guaranteed win rate. Backtests use a simplified next-candle close direction and do not model Quotex settlement, spreads, latency, slippage, ties, or OTC pricing. External spot-FX data may differ from Quotex OTC prices. This is educational software, not financial advice.
+
+## Optional local Python backtest
+The repository also retains a command-line CSV backtester:
 ```bash
-python -m venv .venv
-# Windows: .venv\\Scripts\\activate
-# macOS/Linux: source .venv/bin/activate
 pip install -r requirements.txt
 python backtest.py --csv data/sample_EURUSD.csv
 python -m unittest discover -s tests -v
-python bot.py
-```
+``
 
-## Environment
-- `TELEGRAM_BOT_TOKEN`: BotFather token (secret)
-- `TELEGRAM_CHAT_ID`: chat ID that receives alerts (send /start to your bot first)
-- `TWELVEDATA_API_KEY`: Twelve Data API key (secret)
-- `PAIRS`: comma-separated symbols, default list uses Twelve Data format (e.g. EUR/USD)
-- `INTERVAL`: default `1min`
-- `POLL_SECONDS`: polling interval; default 60
-- `MIN_SCORE`: minimum rule score to emit a directional alert; default 4
-- `PAYOUT`: hypothetical net payout per 1 unit risk on a win for backtest; default 0.80
-
-Never commit `.env` or paste tokens into chat. Set the same variables in your hosting provider's secret/environment settings.
-
-## Backtesting
-CSV must contain columns `datetime,open,high,low,close` (volume optional). Example:
-
-```bash
-python backtest.py --csv data/sample_EURUSD.csv --payout 0.80 --min-score 4
-```
-
-The demo CSV is synthetic and only validates the pipeline. Use properly licensed, timestamped historical data for meaningful testing. The backtest evaluates the *next candle close* as a simplified outcome; it does not model Quotex settlement, spreads, latency, slippage, ties, or OTC pricing.
-
-## Telegram setup\nAfter starting the bot, open it in Telegram and send `/start`, then `/chatid`. Put the returned chat ID in `TELEGRAM_CHAT_ID` on your hosting provider. Use `/scan` for a manual scan. Automatic alerts are sent only when a directional rule signal is found.\n\n## Cloud hosting
-Deploy as a **Docker worker/background worker** on a provider that supports persistent processes (for example Render, Railway, or a VPS). This is not a GitHub Pages app. Add environment variables in the host dashboard; do not put secrets in source control. See `Dockerfile` and `render.yaml`.
-
-## Limitations
-- No Quotex login, scraping, browser automation, account access, or order execution.
-- Twelve Data plan limits and symbol availability apply. The bot skips a pair if the provider rejects it.
-- OTC instruments are not supported by this external spot-FX feed.
-- Rule-based scoring is not machine-learning prediction and is not a probability.
+## Project files
+- `index.html` — complete static web app (HTML, CSS, JavaScript)
+- `analyzer.py` — Python indicator and rule-analysis module
+- `backtest.py` — Python historical CSV backtester
+- `data/sample_EURUSD.csv` — synthetic sample dataset
+- `tests/` — basic unit tests
