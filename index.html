@@ -49,6 +49,12 @@ main{max-width:1480px;margin:auto;padding:27px clamp(13px,3vw,38px) 55px}.top{di
   <img id="imagePreview" class="preview" alt="Uploaded trading chart preview">
   <div class="filehint">Image is processed locally in this browser; it is not sent to a server.</div>
   <button id="imageAnalyze" class="primary" style="margin-top:12px" disabled>Analyse uploaded image</button>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+   <button id="browserVision" disabled>Run browser-trained AI</button>
+   <button id="backendVision" disabled>Run backend-trained AI</button>
+  </div>
+  <div id="visionStatus" class="filehint">Trained model not installed yet. Upload a labelled dataset and train it first.</div>
+  <div id="visionResults" class="reason">Vision model outputs will appear here when model files are installed.</div>
  </div>
  <div class="image-result">
   <div class="panel-head"><h2>Visual chart signal</h2><span class="pill">ESTIMATE ONLY</span></div>
@@ -184,7 +190,66 @@ $('imageAnalyze').addEventListener('click',()=>{
  }
 });
 $('refresh').addEventListener('click',()=>{if(window.QUOTEX_API_BASE&&window.QUOTEX_API_BASE.trim())return;clearData()});$('analyze').addEventListener('click',analyze);$('backtest').addEventListener('click',backtest);$('threshold').addEventListener('change',analyze);$('pair').addEventListener('change',()=>{$('pairTitle').textContent=$('pair').value+' · '+$('tf').value.toUpperCase();if(window.analysisSource==='csv')$('notice').textContent='CSV data remains loaded. Confirm the selected pair matches the source of your imported candles.'});$('tf').addEventListener('change',()=>{$('pairTitle').textContent=$('pair').value+' · '+$('tf').value.toUpperCase();if(window.analysisSource==='csv')$('notice').textContent='CSV data remains loaded. Confirm the selected timeframe matches the source of your imported candles.'});$('csv').addEventListener('change',async e=>{const f=e.target.files&&e.target.files[0];if(!f)return;try{candles=parseCSV(await f.text());imported=true;window.analysisSource='csv';analyze();$('btNote').textContent='Imported '+candles.length+' validated OHLC candles from '+f.name+'. Run the backtest to evaluate historical signals.';$('notice').textContent='CSV data loaded locally in this browser. Confirm the symbol, timeframe and timezone before interpreting any signal. Imported historical prices are not necessarily Quotex OTC prices.'}catch(err){alert(err.message);e.target.value=''}});window.addEventListener('resize',renderChart);clearData();
+
+// Trained vision model: same ONNX weights are intended for browser and backend inference.
+const VISION_MODEL_URL='models/quotex-chart.onnx';
+const VISION_LABELS_URL='models/labels.json';
+let browserVisionSession=null, visionLabels=null;
+async function loadVisionModel(){
+ try{
+  if(!window.ort){$('visionStatus').textContent='Browser ONNX runtime unavailable. Check internet/CDN access.';return}
+  const meta=await fetch(VISION_LABELS_URL,{cache:'no-store'});
+  if(!meta.ok)throw Error('Model labels are not deployed yet');
+  visionLabels=await meta.json();
+  browserVisionSession=await ort.InferenceSession.create(VISION_MODEL_URL,{executionProviders:['wasm']});
+  $('visionStatus').textContent='Browser model ready · '+visionLabels.classes.length+' classes';
+  $('browserVision').disabled=false;
+ }catch(e){$('visionStatus').textContent='Browser model not ready: '+e.message+' · Train and deploy models/quotex-chart.onnx + labels.json.'}
+}
+function prepareVisionTensor(img,size){
+ const cv=document.createElement('canvas');cv.width=size;cv.height=size;
+ const ctx=cv.getContext('2d',{willReadFrequently:true});ctx.drawImage(img,0,0,size,size);
+ const rgba=ctx.getImageData(0,0,size,size).data, data=new Float32Array(3*size*size);
+ const mean=[.485,.456,.406],std=[.229,.224,.225],plane=size*size;
+ for(let p=0;p<plane;p++){for(let c=0;c<3;c++)data[c*plane+p]=((rgba[p*4+c]/255)-mean[c])/std[c]}
+ return new ort.Tensor('float32',data,[1,3,size,size]);
+}
+function visionDecision(logits){
+ const vals=Array.from(logits.data),mx=Math.max(...vals),ex=vals.map(v=>Math.exp(v-mx)),sum=ex.reduce((a,b)=>a+b,0),probs=ex.map(v=>v/sum);
+ const idx=probs.indexOf(Math.max(...probs)),label=visionLabels.classes[idx],score=probs[idx];
+ const bullish=['bullish_engulfing','hammer','morning_star','three_white_soldiers','bullish_trend','breakout_up'];
+ const bearish=['bearish_engulfing','shooting_star','evening_star','three_black_crows','bearish_trend','breakout_down'];
+ const dir=bullish.includes(label)?'bullish':bearish.includes(label)?'bearish':'neutral';
+ const signal=score>=.80&&dir!=='neutral'?(dir==='bullish'?'CALL':'PUT'):'WAIT';
+ return {label,score,dir,signal};
+}
+$('browserVision').addEventListener('click',async()=>{
+ if(!uploadedChartImage)return;
+ try{
+  if(!browserVisionSession)await loadVisionModel();
+  if(!browserVisionSession)return;
+  const input=prepareVisionTensor(uploadedChartImage,Number(visionLabels.image_size||224));
+  const out=await browserVisionSession.run({image:input}),r=visionDecision(out.logits);
+  $('visionResults').textContent='Browser AI: '+r.signal+' · class '+r.label+' · model score '+(r.score*100).toFixed(1)+'%. This score is not a probability of winning a trade.';
+ }catch(e){$('visionResults').textContent='Browser inference error: '+e.message}
+});
+$('backendVision').addEventListener('click',async()=>{
+ const base=(window.QUOTEX_API_BASE||'').replace(/\/$/,'');
+ if(!base){$('visionResults').textContent='Backend URL is not configured in config.js. Browser inference can run without a backend.';return}
+ if(!uploadedChartImage)return;
+ try{
+  const blob=await new Promise(resolve=>uploadedChartImage.toBlob(resolve,'image/jpeg',.92));
+  const form=new FormData();form.append('image',blob,'chart.jpg');
+  const response=await fetch(base+'/api/vision/predict',{method:'POST',body:form});
+  const data=await response.json();if(!response.ok)throw Error(data.detail||'Backend request failed');
+  $('visionResults').textContent='Backend AI: '+data.signal+' · class '+data.class+' · model score '+(data.score*100).toFixed(1)+'%. '+data.warning;
+ }catch(e){$('visionResults').textContent='Backend inference unavailable: '+e.message}
+});
+$('chartImage').addEventListener('change',()=>{const f=$('chartImage').files&&$('chartImage').files[0];if(f){$('browserVision').disabled=false;$('backendVision').disabled=false}});
+
+loadVisionModel();
 </script>
+<script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/ort.min.js"></script>
 <script src="config.js"></script>
 <script src="live.js"></script>
 </body></html>
