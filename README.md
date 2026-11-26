@@ -1,34 +1,49 @@
 # Quotex AI — Web Market Analyzer
 
-Web-only market-analysis dashboard with a secure backend adapter for external spot-FX data. No Telegram, Quotex login, or automated trading.
+Web-only market-analysis dashboard with a backend adapter for external market data. No Quotex login or automated trading.
 
 ## Website
 https://codex-inn.github.io/Quotex-AI-Bot/
 
 Enable GitHub Pages in Settings → Pages → Deploy from a branch → main → /(root).
 
-## Live spot-FX setup (Twelve Data)
-1. Create a Twelve Data account and check current Forex pair entitlements, WebSocket availability, credits, rate limits and terms. Streaming and 1-second ticks are plan-dependent.
-2. Deploy the backend using backend/Dockerfile or backend/render.yaml.
-3. In backend host secret settings, set TWELVEDATA_API_KEY to your private key. Also set ALLOWED_ORIGINS=https://codex-inn.github.io and CANDLES_CACHE_SECONDS=60.
-4. Check https://YOUR-BACKEND/health. provider_configured should be true.
-5. Edit config.js and set window.QUOTEX_API_BASE = "https://YOUR-BACKEND"; then commit.
-6. Reload GitHub Pages and select Live spot Forex.
+## Deploy the backend
+1. Deploy the backend using `backend/Dockerfile` or `backend/render.yaml`.
+2. In your backend host's private environment settings, add the provider secrets you use:
+   - `TWELVEDATA_API_KEY` for spot-FX candles and the provider's WebSocket tick stream.
+   - `OTCHARTS_API_KEY` for the OTCharts Quotex OTC candle REST endpoint.
+3. Set `ALLOWED_ORIGINS=https://codex-inn.github.io` and `CANDLES_CACHE_SECONDS=60`.
+4. Check `https://YOUR-BACKEND/health`. The response lists the configured providers and the supported OTC symbol/timeframe.
+5. Edit `config.js` and set `window.QUOTEX_API_BASE = "https://YOUR-BACKEND"`; commit that public backend URL, which is not a secret.
+6. Reload GitHub Pages. Select **Quotex OTC** to load the supported pair and one-minute timeframe.
 
-Never put the provider key in config.js, HTML, JavaScript, GitHub Pages or chat. The backend proxies the provider REST candle history and WebSocket tick stream. The 1-second selector is a target/staleness preference, not a guarantee; the provider controls actual tick delivery.
+Never put either provider key in `config.js`, HTML, JavaScript, GitHub Pages, or chat. Store each key only in the backend host's secret settings. The example value in `backend/.env.example` is a placeholder. The OTCharts token must be entered by the repository owner; it is not included in this repository or commit.
 
-## OTC
-The Quotex OTC selector reports unavailable unless an authorized OTC feed is integrated. This app does not scrape Quotex or relabel external spot-FX quotes as Quotex OTC prices.
+## Quotex OTC data
+The backend calls `https://otcharts.com/v1/candles` with `venue=quotex`, the selected symbol, timeframe in seconds, and candle limit. It sends `Authorization: Bearer <OTCHARTS_API_KEY>` from the server and maps returned OHLC values and Unix timestamps into the chart's `datetime/open/high/low/close` format.
+
+Only `EURUSD_otc` and `tf=60` seconds are enabled because those are the only symbol and timeframe demonstrated by the supplied API request. The browser polls the REST candle endpoint once per minute. This is periodic candle retrieval; the supplied endpoint does not document a WebSocket or tick stream, so OTC chart updates are not tick-by-tick. Other OTCharts symbols/timeframes are rejected until their support is confirmed.
+
+## Spot Forex
+The existing Twelve Data integration remains separate. Its REST endpoint loads spot-FX candles, and its WebSocket stream may deliver ticks subject to provider plan, symbol access, and delivery. Spot-FX prices are not Quotex OTC prices.
 
 ## Backend endpoints
-- GET /health — provider configuration
-- GET /api/candles?symbol=EUR/USD&interval=1min&outputsize=160 — OHLC candles
-- WS /ws?symbol=EUR/USD — price stream
+- `GET /health` — provider configuration and OTC capabilities
+- `GET /api/candles?symbol=EUR/USD&interval=1min&outputsize=160` — Twelve Data spot-FX OHLC
+- `GET /api/otc/candles?symbol=EURUSD_otc&tf=60&limit=160` — OTCharts Quotex OTC OHLC via REST
+- `WS /ws?symbol=EUR/USD` — Twelve Data spot-FX price stream only
 
 ## Local backend
+```powershell
 cd backend
 python -m venv .venv
+.\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
-Set TWELVEDATA_API_KEY and ALLOWED_ORIGINS in your environment, then run: uvicorn main:app --reload --port 8000
+$env:OTCHARTS_API_KEY = "set-your-private-token-here"
+$env:ALLOWED_ORIGINS = "https://codex-inn.github.io"
+uvicorn main:app --reload --port 8000
+```
+
+Set `TWELVEDATA_API_KEY` too if using the existing spot-FX integration. Do not commit a real `.env` file or provider token.
 
 Signals are transparent rule scores, not probabilities or financial advice. No trades are placed. Legacy Python offline backtest files remain in the repository.
