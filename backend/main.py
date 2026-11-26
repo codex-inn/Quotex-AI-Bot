@@ -9,6 +9,7 @@ from typing import Any
 import httpx
 import websockets
 from fastapi import Body, FastAPI, File, HTTPException, UploadFile, WebSocket, WebSocketDisconnect
+from fastapi.responses import Response
 from fastapi.middleware.cors import CORSMiddleware\n\nfrom multitimeframe import analyse_multitimeframe
 
 APP_NAME = "Quotex AI Market Data API"
@@ -298,3 +299,40 @@ async def multitimeframe_analysis(payload: dict = Body(...)):
         return analyse_multitimeframe(payload)
     except ValueError as exc:
         raise HTTPException(400, str(exc)) from exc
+
+
+@app.get("/api/export/csv")
+async def export_candles_csv(
+    market: str = "quotex_otc",
+    symbol: str = "EURUSD_otc",
+    tf: int = 60,
+    limit: int = 500,
+):
+    """Download provider candles as CSV; Forex and Quotex OTC stay separate."""
+    import csv
+    import io
+
+    if not 1 <= limit <= 500:
+        raise HTTPException(400, "limit must be between 1 and 500")
+    if market == "quotex_otc":
+        data = await otc_candles(symbol=symbol, tf=tf, limit=limit)
+        filename = f"{symbol.lower()}_quotex_otc_{tf}s.csv"
+    elif market == "forex":
+        if tf not in {60, 300, 900}:
+            raise HTTPException(400, "Forex timeframe must be 60, 300 or 900 seconds")
+        interval = {60: "1min", 300: "5min", 900: "15min"}[tf]
+        data = await candles(symbol=symbol, interval=interval, outputsize=limit)
+        filename = f"{symbol.replace('/', '').lower()}_forex_{tf}s.csv"
+    else:
+        raise HTTPException(400, "market must be forex or quotex_otc")
+
+    buffer = io.StringIO()
+    writer = csv.writer(buffer)
+    writer.writerow(["datetime", "open", "high", "low", "close"])
+    for row in data["values"]:
+        writer.writerow([row["datetime"], row["open"], row["high"], row["low"], row["close"]])
+    return Response(
+        content=buffer.getvalue(),
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
