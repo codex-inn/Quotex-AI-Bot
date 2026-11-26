@@ -55,8 +55,8 @@ Signals are transparent rule scores, not probabilities or financial advice. No t
 - RSI 14, MACD, EMA trend context, and recent swing support/resistance levels.
 - Transparent CALL / PUT / WAIT rule scoring with individual reasons. The score is a count of confirmations, not an AI probability or a promise of accuracy.
 - CSV import with OHLC validation and a historical next-candle direction backtest.
-- Screenshot upload with local candle-shape extraction and relative pixel-based OHLC estimates. Exact prices cannot be recovered reliably from screenshots alone.
+- Screenshot upload with experimental candle-shape extraction and relative pixel-based OHLC estimates. Screenshot-derived values are for visual context only; the app deliberately does not issue CALL/PUT from them.
 - No synthetic demo candles are generated. The dashboard waits for a user-uploaded screenshot, imported OHLC CSV, or configured live provider.
 - Imported history, screenshot-derived estimates, spot-FX data and Quotex OTC data are separate sources.
 
-The browser-side analysis works without a provider when you upload a chart screenshot or import a CSV containing real OHLC candles. It does not generate synthetic market candles. To receive Quotex OTC candles, configure the backend and a valid OTCharts token as described above. The website does not collect Quotex login credentials, scrape the trading platform, or execute orders.
+The browser-side rule analysis works without a provider when you import a CSV containing real OHLC candles. Screenshot extraction is approximate and never produces a CALL/PUT signal. The app does not generate synthetic market candles. CSV rows are sorted chronologically when valid timestamps are present. To receive Quotex OTC candles, configure the backend and a valid OTCharts token as described above. The website does not collect Quotex login credentials, scrape the trading platform, or execute orders.
