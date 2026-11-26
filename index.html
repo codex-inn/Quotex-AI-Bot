@@ -73,6 +73,7 @@ main{max-width:1480px;margin:auto;padding:27px clamp(13px,3vw,38px) 55px}.top{di
 <div class="notice" id="notice"><b>Data status:</b> No market data is loaded. Import real OHLC candles from a CSV or configure a genuine backend feed. Screenshot estimates are not verified market data. This page does not place trades. OTC data requires an authorised provider and backend configuration. Spot-FX prices are not Quotex OTC prices. Signals are rule-based educational analysis, not financial advice or guaranteed outcomes.</div>
 <div class="footer">QUOTEX AI · MARKET ANALYSIS ONLY · NO AUTOMATED EXECUTION</div>
 </main>
+<script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/ort.min.js"></script>
 <script>
 const $=id=>document.getElementById(id);
 let candles=[],imported=false,lastResult=null;window.analysisSource='none';
@@ -238,7 +239,7 @@ $('backendVision').addEventListener('click',async()=>{
  if(!base){$('visionResults').textContent='Backend URL is not configured in config.js. Browser inference can run without a backend.';return}
  if(!uploadedChartImage)return;
  try{
-  const blob=await new Promise(resolve=>uploadedChartImage.toBlob(resolve,'image/jpeg',.92));
+  const cv=document.createElement('canvas');cv.width=uploadedChartImage.naturalWidth;cv.height=uploadedChartImage.naturalHeight;cv.getContext('2d').drawImage(uploadedChartImage,0,0);const blob=await new Promise(resolve=>cv.toBlob(resolve,'image/jpeg',.92));
   const form=new FormData();form.append('image',blob,'chart.jpg');
   const response=await fetch(base+'/api/vision/predict',{method:'POST',body:form});
   const data=await response.json();if(!response.ok)throw Error(data.detail||'Backend request failed');
@@ -249,7 +250,6 @@ $('chartImage').addEventListener('change',()=>{const f=$('chartImage').files&&$(
 
 loadVisionModel();
 </script>
-<script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/ort.min.js"></script>
 <script src="config.js"></script>
 <script src="live.js"></script>
 </body></html>
