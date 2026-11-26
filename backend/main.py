@@ -136,7 +136,7 @@ async def price_stream(client_ws: WebSocket, symbol: str = "EUR/USD"):
             }))
             heartbeat_task = asyncio.create_task(send_heartbeats(upstream))
             await client_ws.send_json({
-                "event": "connected",
+                "event": "subscribing",
                 "provider": "Twelve Data",
                 "symbol": symbol,
                 "market": "spot_fx",
