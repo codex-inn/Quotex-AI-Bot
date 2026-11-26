@@ -55,7 +55,7 @@ main{max-width:1480px;margin:auto;padding:27px clamp(13px,3vw,38px) 55px}.top{di
   <div class="muted tiny">IMAGE-BASED DIRECTION</div>
   <strong id="imageSignal" class="neutral">WAIT</strong>
   <div id="imageDetails" class="reason">Upload a chart screenshot to begin.</div>
-  <div class="notice" style="margin-top:10px">This is a basic colour-based visual estimate, not AI candle recognition. It may misread chart themes, indicators, drawings or nonstandard candle colours. Confirm the actual candles and timeframe before making any decision.</div>
+  <div class="notice" style="margin-top:10px">The analyser extracts coloured candle shapes from the screenshot and calculates patterns and indicators from relative pixel-derived OHLC. Exact market prices cannot be recovered reliably from pixels alone. Confirm extracted candles before acting.</div>
  </div>
 </section>
 \n<div class="stats"><div class="stat"><label>RSI · 14</label><strong id="rsi">—</strong></div><div class="stat"><label>MACD direction</label><strong id="macd">—</strong></div><div class="stat"><label>EMA trend</label><strong id="trend">—</strong></div><div class="stat"><label>Candles loaded</label><strong id="count">0</strong></div></div>
@@ -75,7 +75,7 @@ function rsiCalc(values,period){if(values.length<=period)return 50;let gain=0,lo
 function indicators(data){const close=data.map(c=>c.close),e9=ema(close,9),e21=ema(close,21),e50=ema(close,50),fast=ema(close,12),slow=ema(close,26),mac=fast.map((v,i)=>v-slow[i]),sig=ema(mac,9);return{e9,e21,e50,rsi:rsiCalc(close,14),mac:mac.at(-1),sig:sig.at(-1),macSeries:mac,sigSeries:sig}}
 function candlePatterns(data){const n=data.length,a=data[n-1],b=data[n-2],c=data[n-3],out=[];if(!a||!b||!c)return out;const body=Math.abs(a.close-a.open),range=Math.max(a.high-a.low,1e-12),upper=a.high-Math.max(a.open,a.close),lower=Math.min(a.open,a.close)-a.low,small=Math.max(body,range*.015);if(body/range<=.1)out.push({name:'Doji',bias:0});if(lower>=small*2&&upper<=small&&a.close>=a.open)out.push({name:'Hammer',bias:1});if(upper>=small*2&&lower<=small&&a.close<=a.open)out.push({name:'Shooting star',bias:-1});if(a.close>a.open&&b.close<b.open&&a.open<=b.close&&a.close>=b.open)out.push({name:'Bullish engulfing',bias:1});if(a.close<a.open&&b.close>b.open&&a.open>=b.close&&a.close<=b.open)out.push({name:'Bearish engulfing',bias:-1});if(a.high<b.high&&a.low>b.low)out.push({name:'Inside bar',bias:0});const midB=(b.open+b.close)/2,midC=(c.open+c.close)/2;if(c.close<c.open&&Math.abs(b.close-b.open)<Math.abs(c.close-c.open)*.55&&a.close>a.open&&a.close>midC)out.push({name:'Morning star',bias:1});if(c.close>c.open&&Math.abs(b.close-b.open)<Math.abs(c.close-c.open)*.55&&a.close<a.open&&a.close<midC)out.push({name:'Evening star',bias:-1});if(n>=4){const d=data[n-4];if(d.close<d.open&&c.close>c.open&&b.close>c.close&&a.close>b.close&&c.open>d.close)out.push({name:'Three white soldiers',bias:1});if(d.close>d.open&&c.close<c.open&&b.close<c.close&&a.close<b.close&&c.open<d.close)out.push({name:'Three black crows',bias:-1})}return out}
 function levels(data){const tail=data.slice(-70),highs=[],lows=[];for(let i=1;i<tail.length-1;i++){if(tail[i].high>=tail[i-1].high&&tail[i].high>tail[i+1].high)highs.push(tail[i].high);if(tail[i].low<=tail[i-1].low&&tail[i].low<tail[i+1].low)lows.push(tail[i].low)}const p=data.at(-1).close,res=highs.filter(v=>v>p).sort((a,b)=>a-b)[0]??Math.max(...tail.map(x=>x.high)),sup=lows.filter(v=>v<p).sort((a,b)=>b-a)[0]??Math.min(...tail.map(x=>x.low));return{sup,res}}
-function evaluate(data,threshold){if(data.length<55)return{signal:'WAIT',score:0,bull:0,bear:0,reasons:['Load at least 55 candles for indicator analysis.'],patterns:[],ind:null,levels:null};const ind=indicators(data),pats=candlePatterns(data),lv=levels(data),last=data.at(-1),reasons=[];let bull=0,bear=0;
+function evaluate(data,threshold){if(data.length<30)return{signal:'WAIT',score:0,bull:0,bear:0,reasons:['Load at least 30 candles for indicator analysis.'],patterns:[],ind:null,levels:null};const ind=indicators(data),pats=candlePatterns(data),lv=levels(data),last=data.at(-1),reasons=[];let bull=0,bear=0;
 if(ind.e9.at(-1)>ind.e21.at(-1)){bull++;reasons.push('Bullish: EMA 9 is above EMA 21')}else{bear++;reasons.push('Bearish: EMA 9 is below EMA 21')}
 if(last.close>ind.e50.at(-1)){bull++;reasons.push('Bullish: price is above EMA 50')}else if(last.close<ind.e50.at(-1)){bear++;reasons.push('Bearish: price is below EMA 50')}
 if(ind.rsi>=52&&ind.rsi<70){bull++;reasons.push('Bullish momentum: RSI '+ind.rsi.toFixed(1))}else if(ind.rsi<=48&&ind.rsi>30){bear++;reasons.push('Bearish momentum: RSI '+ind.rsi.toFixed(1))}else reasons.push('RSI is neutral or stretched at '+ind.rsi.toFixed(1));
@@ -94,32 +94,76 @@ $('chartImage').addEventListener('change',e=>{
  const f=e.target.files&&e.target.files[0];if(!f)return;
  if(!f.type.startsWith('image/')){alert('Please select an image file.');return}
  const url=URL.createObjectURL(f),img=$('imagePreview');
- img.onload=()=>{uploadedChartImage=img;$('imageAnalyze').disabled=false;$('imageSignal').textContent='WAIT';$('imageSignal').className='neutral';$('imageDetails').textContent='Image ready. Select Analyse uploaded image.'};
+ img.onload=()=>{uploadedChartImage=img;$('imageAnalyze').disabled=false;$('imageSignal').textContent='WAIT';$('imageSignal').className='neutral';$('imageDetails').textContent='Image loaded. The analyser will try to extract individual candle bodies and wicks.'};
  img.onerror=()=>alert('Could not read this image. Try a PNG or JPG screenshot.');
  img.src=url;img.style.display='block';
 });
+function extractCandlesFromImage(img){
+ const scale=Math.min(1,1800/img.naturalWidth),w=Math.max(1,Math.round(img.naturalWidth*scale)),h=Math.max(1,Math.round(img.naturalHeight*scale));
+ const cv=document.createElement('canvas');cv.width=w;cv.height=h;
+ const ctx=cv.getContext('2d',{willReadFrequently:true});ctx.drawImage(img,0,0,w,h);
+ const px=ctx.getImageData(0,0,w,h).data, active=new Uint8Array(w), colors=new Uint8Array(w*h);
+ const x0=Math.floor(w*.04),x1=Math.floor(w*.97),y0=Math.floor(h*.08),y1=Math.floor(h*.90);
+ for(let y=y0;y<y1;y+=1)for(let x=x0;x<x1;x+=1){
+  const i=(y*w+x)*4,R=px[i],G=px[i+1],B=px[i+2];let type=0;
+  // Detect common green and red candle palettes while ignoring grey grid/text.
+  if(G>65&&G>R*1.18&&G>B*1.08)type=1;
+  else if(R>75&&R>G*1.18&&R>B*1.12)type=2;
+  if(type){active[x]=1;colors[y*w+x]=type}
+ }
+ const groups=[];let start=-1,last=-1;
+ for(let x=x0;x<x1;x++)if(active[x]){if(start<0)start=x;last=x}else if(start>=0&&x-last>3){if(last-start>=1)groups.push([start,last]);start=-1}
+ if(start>=0&&last-start>=1)groups.push([start,last]);
+ const out=[];
+ for(const [left,right] of groups){
+  const width=right-left+1;if(width>Math.max(28,w*.035))continue;
+  const rowCounts=new Map();let green=0,red=0,minY=h,maxY=0;
+  for(let x=left;x<=right;x++)for(let y=y0;y<y1;y++){
+   const t=colors[y*w+x];if(!t)continue;
+   rowCounts.set(y,(rowCounts.get(y)||0)+1);if(t===1)green++;else red++;
+   if(y<minY)minY=y;if(y>maxY)maxY=y;
+  }
+  const total=green+red;if(total<5||maxY-minY<5)continue;
+  const bullish=green>red,dominant=Math.max(green,red)/total;
+  if(dominant<.65)continue;
+  const maxRow=Math.max(...rowCounts.values()),bodyRows=[...rowCounts].filter(([,n])=>n>=Math.max(2,maxRow*.55)).map(([y])=>y);
+  let bodyTop=bodyRows.length?Math.min(...bodyRows):minY,bodyBottom=bodyRows.length?Math.max(...bodyRows):maxY;
+  if(bodyBottom-bodyTop<2){bodyTop=minY;bodyBottom=maxY}
+  // Pixel height is mapped to relative chart units. Absolute market prices need readable axis labels.
+  const price=y=>1000-(y/h)*1000;
+  const open=price(bullish?bodyBottom:bodyTop),close=price(bullish?bodyTop:bodyBottom);
+  const high=price(minY),low=price(maxY);
+  if(high<Math.max(open,close)||low>Math.min(open,close))continue;
+  out.push({datetime:String(left).padStart(6,'0'),open,high,low,close,_x:left,_green:green,_red:red});
+ }
+ out.sort((a,b)=>a._x-b._x);
+ // Remove duplicate fragments caused by coloured chart labels or indicator marks.
+ const filtered=[];
+ for(const c of out){const prev=filtered.at(-1);if(prev&&c._x-prev._x<3)continue;filtered.push(c)}
+ return {candles:filtered,width:w,height:h};
+}
 $('imageAnalyze').addEventListener('click',()=>{
  if(!uploadedChartImage)return;
  try{
-  const img=uploadedChartImage,scale=Math.min(1,1200/img.naturalWidth),w=Math.max(1,Math.round(img.naturalWidth*scale)),h=Math.max(1,Math.round(img.naturalHeight*scale));
-  const c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d',{willReadFrequently:true});x.drawImage(img,0,0,w,h);
-  const data=x.getImageData(0,0,w,h).data;let green=0,red=0,neutral=0;
-  // Focus on the right-most section where the latest visible candles usually appear.
-  const x0=Math.floor(w*.68),y0=Math.floor(h*.08),y1=Math.floor(h*.88);
-  for(let yy=y0;yy<y1;yy+=2)for(let xx=x0;xx<w;xx+=2){
-   const i=(yy*w+xx)*4,R=data[i],G=data[i+1],B=data[i+2];
-   if(data[i+3]<180)continue;
-   if(G>R*1.22&&G>B*1.12&&G>75)green++;
-   else if(R>G*1.22&&R>B*1.12&&R>85)red++;
-   else neutral++;
+  const result=extractCandlesFromImage(uploadedChartImage),extracted=result.candles;
+  if(extracted.length<12){
+   $('imageSignal').textContent='WAIT';$('imageSignal').className='neutral';
+   $('imageDetails').textContent='Could not reliably identify enough separate candles ('+extracted.length+' detected). Upload a clean screenshot showing the full candle chart, with clear red/green bodies and minimal overlays.';
+   return;
   }
-  const total=green+red,ratio=total?green/total:0.5,signal=total<35?'WAIT':ratio>.60?'CALL':ratio<.40?'PUT':'WAIT';
-  $('imageSignal').textContent=signal;$('imageSignal').className=signal==='CALL'?'call':signal==='PUT'?'put':'neutral';
-  const pct=total?Math.round(ratio*100):0;
-  $('imageDetails').textContent=total<35?'Not enough clearly coloured candle pixels detected. Try a closer crop with visible green/red candles.':'Right-side colour scan: '+green+' green pixels, '+red+' red pixels. Green share: '+pct+'%. '+(signal==='CALL'?'Green pixels dominate this crop.':signal==='PUT'?'Red pixels dominate this crop.':'No clear colour dominance detected.');
- }catch(err){$('imageSignal').textContent='WAIT';$('imageDetails').textContent='Image analysis failed. Try another screenshot.'}
+  candles=extracted.map(({_x,_green,_red,...c})=>c);imported=true;
+  $('notice').textContent='Screenshot-derived candles are relative pixel prices, not verified market OHLC values. Candle direction and approximate structure can be analysed, but exact price levels and live OTC conditions cannot be recovered unless the price scale and data are available.';
+  analyze();
+  const r=lastResult;
+  $('imageSignal').textContent=extracted.length<30?'WAIT':r.signal;
+  $('imageSignal').className=extracted.length<30?'neutral':r.signal==='CALL'?'call':r.signal==='PUT'?'put':'neutral';
+  $('imageDetails').textContent='Extracted '+extracted.length+' candle-like shapes from the screenshot. '+(extracted.length<30?'Not enough history for a robust indicator signal; upload a wider chart view.':'Pattern scan: '+(r.patterns.map(p=>p.name).join(', ')||'no clear named pattern')+'. EMA/RSI/MACD and trend calculations are now based on extracted screenshot candle geometry. Relative levels only; visual extraction can make mistakes.');
+ }catch(err){
+  $('imageSignal').textContent='WAIT';$('imageSignal').className='neutral';
+  $('imageDetails').textContent='Image processing failed: '+(err&&err.message?err.message:'unknown error')+'. Try a standard PNG/JPG screenshot.';
+ }
 });
-\n$('refresh').addEventListener('click',()=>{if(window.QUOTEX_API_BASE&&window.QUOTEX_API_BASE.trim())return;makeDemo()});$('analyze').addEventListener('click',analyze);$('backtest').addEventListener('click',backtest);$('threshold').addEventListener('change',analyze);$('pair').addEventListener('change',()=>{if(!window.QUOTEX_API_BASE)makeDemo()});$('tf').addEventListener('change',()=>{$('pairTitle').textContent=$('pair').value+' · '+$('tf').value.toUpperCase();if(!window.QUOTEX_API_BASE)makeDemo()});$('csv').addEventListener('change',async e=>{const f=e.target.files&&e.target.files[0];if(!f)return;try{candles=parseCSV(await f.text());imported=true;analyze();$('btNote').textContent='Imported '+candles.length+' validated OHLC candles from '+f.name+'. Run the backtest to evaluate historical signals.';$('notice').textContent='CSV data loaded locally in this browser. Confirm the symbol, timeframe and timezone before interpreting any signal. Imported historical prices are not necessarily Quotex OTC prices.'}catch(err){alert(err.message);e.target.value=''}});window.addEventListener('resize',renderChart);makeDemo();
+$('refresh').addEventListener('click',()=>{if(window.QUOTEX_API_BASE&&window.QUOTEX_API_BASE.trim())return;makeDemo()});$('analyze').addEventListener('click',analyze);$('backtest').addEventListener('click',backtest);$('threshold').addEventListener('change',analyze);$('pair').addEventListener('change',()=>{if(!window.QUOTEX_API_BASE)makeDemo()});$('tf').addEventListener('change',()=>{$('pairTitle').textContent=$('pair').value+' · '+$('tf').value.toUpperCase();if(!window.QUOTEX_API_BASE)makeDemo()});$('csv').addEventListener('change',async e=>{const f=e.target.files&&e.target.files[0];if(!f)return;try{candles=parseCSV(await f.text());imported=true;analyze();$('btNote').textContent='Imported '+candles.length+' validated OHLC candles from '+f.name+'. Run the backtest to evaluate historical signals.';$('notice').textContent='CSV data loaded locally in this browser. Confirm the symbol, timeframe and timezone before interpreting any signal. Imported historical prices are not necessarily Quotex OTC prices.'}catch(err){alert(err.message);e.target.value=''}});window.addEventListener('resize',renderChart);makeDemo();
 </script>
 <script src="config.js"></script>
 <script src="live.js"></script>
