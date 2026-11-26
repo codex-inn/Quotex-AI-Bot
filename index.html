@@ -71,4 +71,6 @@ $('refresh').onclick=makeDemo;$('analyze').onclick=analyze;$('backtest').onclick
 function render(){$('count').textContent=candles.length;$('pairTitle').textContent=$('pair').value+' · '+$('tf').value.toUpperCase();draw()}
 window.addEventListener('resize',()=>{if(candles.length)draw()});makeDemo();
 </script>
+<script src="config.js"></script>
+<script src="live.js"></script>
 </body></html>
