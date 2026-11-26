@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: quotex-ai-market-api
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: .
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: TWELVEDATA_API_KEY
+        sync: false
+      - key: ALLOWED_ORIGINS
+        value: https://codex-inn.github.io
+      - key: CANDLES_CACHE_SECONDS
+        value: "60"
