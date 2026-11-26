@@ -21,7 +21,7 @@ ALLOWED_SYMBOLS = {
     "EUR/USD", "GBP/USD", "USD/JPY", "USD/CHF",
     "AUD/USD", "USD/CAD", "NZD/USD"
 }
-cache: dict[str, tuple[float, dict[str, Any]]] = {}
+cache: dict[str, tuple[float, dict[str, Any]]] = {}\n\n\nasync def send_heartbeats(upstream):\n    while True:\n        await asyncio.sleep(10)\n        await upstream.send(json.dumps({"action": "heartbeat"}))
 
 app = FastAPI(title=APP_NAME, version="1.0.0")
 app.add_middleware(
@@ -150,7 +150,7 @@ async def price_stream(client_ws: WebSocket, symbol: str = "EUR/USD"):
                     })
                 elif data.get("event") == "status":
                     await client_ws.send_json(data)
-                elif data.get("event") == "error" or data.get("status") == "error":
+                elif data.get("event") == "subscribe-status":\n                    await client_ws.send_json(data)\n                elif data.get("event") == "error" or data.get("status") == "error":
                     await client_ws.send_json({
                         "event": "error",
                         "message": data.get("message", "Provider rejected the stream subscription"),
