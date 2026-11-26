@@ -25,6 +25,7 @@ python -m venv .venv
 # macOS/Linux: source .venv/bin/activate
 pip install -r requirements.txt
 python backtest.py --csv data/sample_EURUSD.csv
+python -m unittest discover -s tests -v
 python bot.py
 ```
 
@@ -49,7 +50,7 @@ python backtest.py --csv data/sample_EURUSD.csv --payout 0.80 --min-score 4
 
 The demo CSV is synthetic and only validates the pipeline. Use properly licensed, timestamped historical data for meaningful testing. The backtest evaluates the *next candle close* as a simplified outcome; it does not model Quotex settlement, spreads, latency, slippage, ties, or OTC pricing.
 
-## Cloud hosting
+## Telegram setup\nAfter starting the bot, open it in Telegram and send `/start`, then `/chatid`. Put the returned chat ID in `TELEGRAM_CHAT_ID` on your hosting provider. Use `/scan` for a manual scan. Automatic alerts are sent only when a directional rule signal is found.\n\n## Cloud hosting
 Deploy as a **Docker worker/background worker** on a provider that supports persistent processes (for example Render, Railway, or a VPS). This is not a GitHub Pages app. Add environment variables in the host dashboard; do not put secrets in source control. See `Dockerfile` and `render.yaml`.
 
 ## Limitations
