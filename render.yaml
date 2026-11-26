@@ -9,6 +9,8 @@ services:
     envVars:
       - key: TWELVEDATA_API_KEY
         sync: false
+      - key: OTCHARTS_API_KEY
+        sync: false
       - key: ALLOWED_ORIGINS
         value: https://codex-inn.github.io
       - key: CANDLES_CACHE_SECONDS
