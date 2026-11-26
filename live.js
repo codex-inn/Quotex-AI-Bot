@@ -61,5 +61,5 @@
   pair.addEventListener('change',()=>{if(base)market()==='otc'?connectOtc():connectSpot()});
   tf.addEventListener('change',()=>{if(base)market()==='otc'?connectOtc():connectSpot()});
   $('refresh').addEventListener('click',()=>{if(base)market()==='otc'?connectOtc():connectSpot()});
-  configureOtc().then(()=>{configureChoices();if(base)connectSpot();else{status('DEMO · LIVE NOT CONFIGURED','#f5c66a');notice('Demo mode is active. Deploy the backend and configure provider keys as private backend secrets. Quotex OTC availability requires OTCHARTS_API_KEY.')}});
+  configureOtc().then(()=>{configureChoices();if(base)connectSpot();else{status('NO LIVE DATA · BACKEND NOT CONFIGURED','#f5c66a');notice('No live market feed is connected. Upload a chart screenshot or import a real OHLC CSV for analysis. To enable live data, deploy the backend and configure provider keys as private backend secrets. Quotex OTC requires OTCHARTS_API_KEY.')}});
 })();
