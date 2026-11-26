@@ -8,7 +8,7 @@ from typing import Any
 
 import httpx
 import websockets
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, File, HTTPException, UploadFile, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 
 APP_NAME = "Quotex AI Market Data API"
@@ -270,3 +270,22 @@ async def price_stream(client_ws: WebSocket, symbol: str = "EUR/USD"):
             await client_ws.close()
         except Exception:
             pass
+
+
+@app.post("/api/vision/predict")
+async def vision_predict(image: UploadFile = File(...)):
+    """Classify an uploaded chart image with the locally installed trained ONNX model."""
+    if image.content_type not in {"image/png", "image/jpeg", "image/webp"}:
+        raise HTTPException(415, "Upload a PNG, JPEG or WebP chart screenshot")
+    raw = await image.read(8 * 1024 * 1024 + 1)
+    if len(raw) > 8 * 1024 * 1024:
+        raise HTTPException(413, "Image exceeds the 8 MB upload limit")
+    try:
+        from vision import predict_image
+        return predict_image(raw)
+    except FileNotFoundError as exc:
+        raise HTTPException(503, str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(500, "Vision model inference failed") from exc
