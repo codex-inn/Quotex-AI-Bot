@@ -31,6 +31,8 @@ The existing Twelve Data integration remains separate. Its REST endpoint loads s
 - `GET /health` — provider configuration and OTC capabilities
 - `GET /api/candles?symbol=EUR/USD&interval=1min&outputsize=160` — Twelve Data spot-FX OHLC
 - `GET /api/otc/candles?symbol=EURUSD_otc&tf=60&limit=160` — OTCharts Quotex OTC OHLC via REST
+- `GET /api/export/csv?market=quotex_otc&symbol=EURUSD_otc&tf=60&limit=500` — download separate Quotex OTC candles as CSV
+- `GET /api/export/csv?market=forex&symbol=EUR/USD&tf=60&limit=500` — download separate spot-Forex candles as CSV
 - `WS /ws?symbol=EUR/USD` — Twelve Data spot-FX price stream only
 
 ## Local backend
