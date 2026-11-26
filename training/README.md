@@ -31,3 +31,28 @@ The output is `models/quotex-chart.onnx`, `models/labels.json` and `models/best_
 ## Evaluation
 
 Do not treat the random validation accuracy as trading accuracy. Evaluate on a separate, later, unseen time period and report per-class precision/recall, confusion matrix, false CALL/PUT rate, and calibration. A chart-pattern label alone does not establish the next candle direction. A production signal should require separate, out-of-sample outcome validation.
+
+
+## Multi-timeframe analysis (M1 + M5 + M15 + M30 + H1)
+
+The backend now exposes `POST /api/analysis/multitimeframe`. Send a chronological list of one-minute OHLC candles; the service aggregates complete UTC-aligned bars into M5, M15, M30 and H1, then reports EMA 9/21 trend context and RSI(14) for each timeframe.
+
+Example request body:
+
+```json
+{
+  "candles": [
+    {
+      "datetime": "2026-11-26T10:00:00Z",
+      "open": 1.0500,
+      "high": 1.0510,
+      "low": 1.0495,
+      "close": 1.0505
+    }
+  ]
+}
+```
+
+The example shows the required shape only; at least 60 unique, timezone-aware, one-minute candles are required. For H1 to become ready, provide at least 30 complete hourly bars (1,800 consecutive one-minute candles). Missing minutes cause incomplete higher-timeframe bars to be excluded. Only completed bars are analysed; optional `as_of` accepts an ISO-8601 timestamp and bars not yet closed at that time are dropped.
+
+The API returns a per-timeframe direction and an overall CALL/PUT/WAIT label. It returns CALL or PUT only when all five timeframes are ready and aligned; otherwise it returns WAIT. This is a transparent technical-analysis rule, not a trained ML model, calibrated probability, or validated trading edge. Spot FX and Quotex OTC data must remain separately identified; do not combine markets as if their prices were interchangeable.
