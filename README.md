@@ -60,3 +60,16 @@ Signals are transparent rule scores, not probabilities or financial advice. No t
 - Imported history, screenshot-derived estimates, spot-FX data and Quotex OTC data are separate sources.
 
 The browser-side rule analysis works without a provider when you import a CSV containing real OHLC candles. Screenshot extraction is approximate and never produces a CALL/PUT signal. The app does not generate synthetic market candles. CSV rows are sorted chronologically when valid timestamps are present. To receive Quotex OTC candles, configure the backend and a valid OTCharts token as described above. The website does not collect Quotex login credentials, scrape the trading platform, or execute orders.
+
+
+## Trained screenshot vision AI (browser + backend)
+
+The repository now includes a ResNet18 training pipeline and shared ONNX inference:
+- `training/train_chart_model.py` fine-tunes an image classifier from labelled chart screenshots.
+- `backend/vision.py` and `POST /api/vision/predict` run the same ONNX model in the Python backend.
+- The website has separate **Run browser-trained AI** and **Run backend-trained AI** controls. Browser inference uses ONNX Runtime Web; backend inference uses ONNX Runtime CPU.
+- Both paths require the same trained files: `models/quotex-chart.onnx` and `models/labels.json`. They are intentionally not included as fake/pretrained trading assets. Until trained files are deployed, the vision model controls remain unavailable or report that the model is missing.
+
+Follow [training/README.md](training/README.md) to build the labelled dataset and train the model. No paid AI API key is needed. A first training run downloads the standard ResNet18 initialization weights. To enable backend inference, deploy the backend with its `models/` folder populated; to enable browser inference, publish those same two files under the website's `models/` folder. Do not commit large model weights unless you intentionally want them public.
+
+The classifier identifies chart-image classes; it does not predict a guaranteed next candle. Its displayed score is a model class score, not a win probability. Validate chronologically on unseen market sessions and keep WAIT as the default when confidence/evidence is weak. Live Quotex OTC prices remain a separate feed integration and still require a legitimate data provider; this vision model does not need that feed.
