@@ -15,6 +15,14 @@ main{max-width:1480px;margin:auto;padding:27px clamp(13px,3vw,38px) 55px}.top{di
 .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin:15px 0}.stat{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:12px;min-width:0}.stat label{color:var(--muted);font-size:9px;text-transform:uppercase;letter-spacing:1px}.stat strong{display:block;font-size:19px;margin-top:4px;overflow-wrap:anywhere}.signal{display:flex;align-items:center;justify-content:space-between;padding:14px;border-radius:11px;background:#0b1625;border:1px solid var(--line);margin-bottom:11px}.signal strong{font-size:26px;letter-spacing:1px}.call{color:var(--green)}.put{color:var(--red)}.neutral{color:var(--gold)}.meter{height:7px;border-radius:20px;background:#26364d;overflow:hidden;margin:8px 0 12px}.meter span{display:block;height:100%;background:linear-gradient(90deg,#f5c66a,#2bd69b);width:0;transition:width .2s}.reason{padding:8px 0;border-bottom:1px solid #1e2b40;color:#c2cfe0;font-size:11px}.reason:last-child{border:0}.pill{padding:4px 8px;border:1px solid var(--line);border-radius:20px;color:var(--muted);font-size:9px;white-space:nowrap}.two{display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-top:15px}.table{width:100%;border-collapse:collapse;font-size:11px}.table td{padding:9px 7px;border-bottom:1px solid #203047}.table td:first-child{color:var(--muted)}.table td:last-child{text-align:right;font-variant-numeric:tabular-nums}.notice{border:1px solid #5b4a25;background:#2b2415;color:#e8d5a5;padding:12px 14px;border-radius:11px;font-size:10px;margin-top:15px}.footer{text-align:center;color:#667b96;font-size:10px;margin-top:22px}.filehint{color:var(--muted);font-size:9px;margin-top:3px}
 @media(max-width:920px){.grid{grid-template-columns:1fr}.two{grid-template-columns:1fr}.top{align-items:start;flex-direction:column}.chart-wrap{height:290px}}
 @media(max-width:520px){header{padding:0 12px}.status{font-size:9px}.controls .field{flex:1;min-width:42%}.grow{min-width:100%}.actions{width:100%}.actions button{flex:1}.stats{grid-template-columns:repeat(2,1fr);gap:7px}.stat{padding:10px}.stat strong{font-size:17px}.chart-wrap{height:250px}.panel{padding:12px}}
+
+.image-tools{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(240px,.9fr);gap:14px;margin:15px 0}
+.upload-box{border:1px dashed #49617f;border-radius:12px;background:#0a1422;padding:15px}
+.upload-box input{max-width:100%;color:var(--muted);font-size:11px}
+.preview{width:100%;max-height:280px;object-fit:contain;background:#07101c;border:1px solid var(--line);border-radius:9px;margin-top:12px;display:none}
+.image-result{background:#0b1625;border:1px solid var(--line);border-radius:12px;padding:15px}
+.image-result strong{font-size:25px}
+@media(max-width:760px){.image-tools{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -32,7 +40,25 @@ main{max-width:1480px;margin:auto;padding:27px clamp(13px,3vw,38px) 55px}.top{di
 <section class="panel"><div class="panel-head"><div><div class="muted tiny" id="pairTitle">EUR/USD · 1 MIN</div><div><span class="price" id="price">—</span><span class="change" id="delta">SYNTHETIC DEMO</span></div></div><span class="pill">OHLC CANDLE CHART</span></div><div class="chart-wrap"><canvas id="chart" aria-label="Candlestick chart"></canvas></div><div class="legend"><span><i class="key" style="background:#2bd69b"></i>Bullish</span><span><i class="key" style="background:#ff637d"></i>Bearish</span><span><i class="key" style="background:#78aaff"></i>EMA 9</span><span><i class="key" style="background:#f5c66a"></i>EMA 21</span><span><i class="key" style="background:#b78cff"></i>EMA 50</span></div></section>
 <aside class="panel"><div class="panel-head"><h2>Signal decision</h2><span class="pill">RULE-BASED ENGINE</span></div><div class="signal"><div><div class="muted tiny">LATEST BIAS</div><strong id="signal" class="neutral">WAIT</strong></div><div style="text-align:right"><div class="muted tiny">DIRECTION SCORE</div><strong id="score">0 / 5</strong></div></div><div class="muted tiny">Rule confirmations · not a win probability</div><div class="meter"><span id="meter"></span></div><div id="reasons"><div class="reason">Run analysis to evaluate the latest candle.</div></div><div style="margin-top:13px"><div class="muted tiny" style="margin-bottom:7px">DETECTED CANDLE PATTERNS</div><div id="patterns" style="display:flex;gap:6px;flex-wrap:wrap"><span class="pill">Waiting for scan</span></div></div></aside>
 </div>
-<div class="stats"><div class="stat"><label>RSI · 14</label><strong id="rsi">—</strong></div><div class="stat"><label>MACD direction</label><strong id="macd">—</strong></div><div class="stat"><label>EMA trend</label><strong id="trend">—</strong></div><div class="stat"><label>Candles loaded</label><strong id="count">0</strong></div></div>
+
+<section class="image-tools">
+ <div class="upload-box">
+  <div class="panel-head"><h2>Upload chart / candle screenshot</h2><span class="pill">IMAGE ANALYSIS</span></div>
+  <div class="muted tiny">Upload a clear screenshot with visible green/red candles. Crop out menus and keep the latest candles visible.</div>
+  <input id="chartImage" type="file" accept="image/*">
+  <img id="imagePreview" class="preview" alt="Uploaded trading chart preview">
+  <div class="filehint">Image is processed locally in this browser; it is not sent to a server.</div>
+  <button id="imageAnalyze" class="primary" style="margin-top:12px" disabled>Analyse uploaded image</button>
+ </div>
+ <div class="image-result">
+  <div class="panel-head"><h2>Visual chart signal</h2><span class="pill">ESTIMATE ONLY</span></div>
+  <div class="muted tiny">IMAGE-BASED DIRECTION</div>
+  <strong id="imageSignal" class="neutral">WAIT</strong>
+  <div id="imageDetails" class="reason">Upload a chart screenshot to begin.</div>
+  <div class="notice" style="margin-top:10px">This is a basic colour-based visual estimate, not AI candle recognition. It may misread chart themes, indicators, drawings or nonstandard candle colours. Confirm the actual candles and timeframe before making any decision.</div>
+ </div>
+</section>
+\n<div class="stats"><div class="stat"><label>RSI · 14</label><strong id="rsi">—</strong></div><div class="stat"><label>MACD direction</label><strong id="macd">—</strong></div><div class="stat"><label>EMA trend</label><strong id="trend">—</strong></div><div class="stat"><label>Candles loaded</label><strong id="count">0</strong></div></div>
 <div class="two">
 <section class="panel"><div class="panel-head"><h2>Support & resistance</h2><span class="pill">RECENT SWING LEVELS</span></div><table class="table"><tbody><tr><td>Nearest resistance</td><td id="resistance">—</td></tr><tr><td>Last traded price</td><td id="lastPrice">—</td></tr><tr><td>Nearest support</td><td id="support">—</td></tr><tr><td>Market structure</td><td id="structure">—</td></tr></tbody></table></section>
 <section class="panel"><div class="panel-head"><h2>Indicator snapshot</h2><span class="pill">LATEST CANDLE</span></div><table class="table"><tbody><tr><td>EMA 9</td><td id="ema9">—</td></tr><tr><td>EMA 21</td><td id="ema21">—</td></tr><tr><td>EMA 50</td><td id="ema50">—</td></tr><tr><td>RSI 14</td><td id="rsi2">—</td></tr><tr><td>MACD / signal</td><td id="macd2">—</td></tr></tbody></table></section>
@@ -62,7 +88,38 @@ function analyze(){if(candles.length<55){$('signal').textContent='WAIT';$('score
 function makeDemo(){let p=$('pair').value.includes('JPY')?149.2:($('pair').value==='EUR/USD'?1.0842:1.265);candles=[];let now=Date.now()-160*60000;for(let i=0;i<160;i++){const drift=Math.sin(i/17)*p*.000025+(Math.random()-.5)*p*.00012,o=p,c=o+drift,h=Math.max(o,c)+Math.random()*p*.00005,l=Math.min(o,c)-Math.random()*p*.00005;candles.push({datetime:new Date(now+i*60000).toISOString(),open:o,high:h,low:l,close:c});p=c}imported=false;analyze();$('btNote').textContent='Synthetic demonstration data only. Import a real OHLC CSV for meaningful historical analysis.'}
 function parseCSV(text){const lines=text.replace(/^\uFEFF/,'').trim().split(/\r?\n/);if(lines.length<2)throw Error('CSV file is empty.');const split=line=>{const out=[];let cur='',quoted=false;for(let i=0;i<line.length;i++){const ch=line[i];if(ch==='"'&&line[i+1]==='"'&&quoted){cur+='"';i++}else if(ch==='"')quoted=!quoted;else if(ch===','&&!quoted){out.push(cur.trim());cur=''}else cur+=ch}out.push(cur.trim());return out};const head=split(lines.shift()).map(x=>x.toLowerCase().replace(/^\ufeff/,''));const find=names=>head.findIndex(x=>names.includes(x));const ix={time:find(['datetime','date','time','timestamp']),open:find(['open','o']),high:find(['high','h']),low:find(['low','l']),close:find(['close','c'])};if(['open','high','low','close'].some(k=>ix[k]<0))throw Error('CSV needs open, high, low and close columns. Add a datetime or timestamp column if available.');const rows=lines.map((line,i)=>{const a=split(line),o=Number(a[ix.open]),h=Number(a[ix.high]),l=Number(a[ix.low]),c=Number(a[ix.close]);if(![o,h,l,c].every(Number.isFinite)||h<Math.max(o,c)||l>Math.min(o,c)||h<l)throw Error('Invalid OHLC values at CSV row '+(i+2));let t=ix.time>=0?a[ix.time]:String(i);if(ix.time>=0&&/^\d{9,13}$/.test(t)){const n=Number(t);t=new Date(n<1e12?n*1000:n).toISOString()}return{datetime:t,open:o,high:h,low:l,close:c}}).filter(Boolean);if(rows.length<55)throw Error('Please import at least 55 valid candles.');return rows}
 function backtest(){if(candles.length<65){$('btNote').textContent='At least 65 candles are required for this backtest.';return}const source=candles.slice(),threshold=+$('threshold').value,trades=[];for(let i=55;i<source.length-1;i++){const result=evaluate(source.slice(0,i+1),threshold);if(result.signal==='WAIT')continue;const next=source[i+1],prev=source[i],win=result.signal==='CALL'?next.close>prev.close:next.close<prev.close;trades.push(win)}const wins=trades.filter(Boolean).length,n=trades.length,losses=n-wins,rate=n?wins/n*100:0,net=wins*.8-losses;$('btTrades').textContent=n;$('btWin').textContent=rate.toFixed(1)+'%';$('btNet').textContent=net.toFixed(2);$('btWL').textContent=wins+' / '+losses;$('btNote').textContent='*Illustrative payout assumption: +0.8 units per correct direction and −1 unit per incorrect direction. No fees, spread, expiry, tie, slippage or OTC execution modelling. Past results do not predict future outcomes.'}
-$('refresh').addEventListener('click',()=>{if(window.QUOTEX_API_BASE&&window.QUOTEX_API_BASE.trim())return;makeDemo()});$('analyze').addEventListener('click',analyze);$('backtest').addEventListener('click',backtest);$('threshold').addEventListener('change',analyze);$('pair').addEventListener('change',()=>{if(!window.QUOTEX_API_BASE)makeDemo()});$('tf').addEventListener('change',()=>{$('pairTitle').textContent=$('pair').value+' · '+$('tf').value.toUpperCase();if(!window.QUOTEX_API_BASE)makeDemo()});$('csv').addEventListener('change',async e=>{const f=e.target.files&&e.target.files[0];if(!f)return;try{candles=parseCSV(await f.text());imported=true;analyze();$('btNote').textContent='Imported '+candles.length+' validated OHLC candles from '+f.name+'. Run the backtest to evaluate historical signals.';$('notice').textContent='CSV data loaded locally in this browser. Confirm the symbol, timeframe and timezone before interpreting any signal. Imported historical prices are not necessarily Quotex OTC prices.'}catch(err){alert(err.message);e.target.value=''}});window.addEventListener('resize',renderChart);makeDemo();
+
+let uploadedChartImage=null;
+$('chartImage').addEventListener('change',e=>{
+ const f=e.target.files&&e.target.files[0];if(!f)return;
+ if(!f.type.startsWith('image/')){alert('Please select an image file.');return}
+ const url=URL.createObjectURL(f),img=$('imagePreview');
+ img.onload=()=>{uploadedChartImage=img;$('imageAnalyze').disabled=false;$('imageSignal').textContent='WAIT';$('imageSignal').className='neutral';$('imageDetails').textContent='Image ready. Select Analyse uploaded image.'};
+ img.onerror=()=>alert('Could not read this image. Try a PNG or JPG screenshot.');
+ img.src=url;img.style.display='block';
+});
+$('imageAnalyze').addEventListener('click',()=>{
+ if(!uploadedChartImage)return;
+ try{
+  const img=uploadedChartImage,scale=Math.min(1,1200/img.naturalWidth),w=Math.max(1,Math.round(img.naturalWidth*scale)),h=Math.max(1,Math.round(img.naturalHeight*scale));
+  const c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d',{willReadFrequently:true});x.drawImage(img,0,0,w,h);
+  const data=x.getImageData(0,0,w,h).data;let green=0,red=0,neutral=0;
+  // Focus on the right-most section where the latest visible candles usually appear.
+  const x0=Math.floor(w*.68),y0=Math.floor(h*.08),y1=Math.floor(h*.88);
+  for(let yy=y0;yy<y1;yy+=2)for(let xx=x0;xx<w;xx+=2){
+   const i=(yy*w+xx)*4,R=data[i],G=data[i+1],B=data[i+2];
+   if(data[i+3]<180)continue;
+   if(G>R*1.22&&G>B*1.12&&G>75)green++;
+   else if(R>G*1.22&&R>B*1.12&&R>85)red++;
+   else neutral++;
+  }
+  const total=green+red,ratio=total?green/total:0.5,signal=total<35?'WAIT':ratio>.60?'CALL':ratio<.40?'PUT':'WAIT';
+  $('imageSignal').textContent=signal;$('imageSignal').className=signal==='CALL'?'call':signal==='PUT'?'put':'neutral';
+  const pct=total?Math.round(ratio*100):0;
+  $('imageDetails').textContent=total<35?'Not enough clearly coloured candle pixels detected. Try a closer crop with visible green/red candles.':'Right-side colour scan: '+green+' green pixels, '+red+' red pixels. Green share: '+pct+'%. '+(signal==='CALL'?'Green pixels dominate this crop.':signal==='PUT'?'Red pixels dominate this crop.':'No clear colour dominance detected.');
+ }catch(err){$('imageSignal').textContent='WAIT';$('imageDetails').textContent='Image analysis failed. Try another screenshot.'}
+});
+\n$('refresh').addEventListener('click',()=>{if(window.QUOTEX_API_BASE&&window.QUOTEX_API_BASE.trim())return;makeDemo()});$('analyze').addEventListener('click',analyze);$('backtest').addEventListener('click',backtest);$('threshold').addEventListener('change',analyze);$('pair').addEventListener('change',()=>{if(!window.QUOTEX_API_BASE)makeDemo()});$('tf').addEventListener('change',()=>{$('pairTitle').textContent=$('pair').value+' · '+$('tf').value.toUpperCase();if(!window.QUOTEX_API_BASE)makeDemo()});$('csv').addEventListener('change',async e=>{const f=e.target.files&&e.target.files[0];if(!f)return;try{candles=parseCSV(await f.text());imported=true;analyze();$('btNote').textContent='Imported '+candles.length+' validated OHLC candles from '+f.name+'. Run the backtest to evaluate historical signals.';$('notice').textContent='CSV data loaded locally in this browser. Confirm the symbol, timeframe and timezone before interpreting any signal. Imported historical prices are not necessarily Quotex OTC prices.'}catch(err){alert(err.message);e.target.value=''}});window.addEventListener('resize',renderChart);makeDemo();
 </script>
 <script src="config.js"></script>
 <script src="live.js"></script>
