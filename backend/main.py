@@ -104,6 +104,10 @@ async def candles(symbol: str = "EUR/USD", interval: str = "1min", outputsize: i
 
 @app.websocket("/ws")
 async def price_stream(client_ws: WebSocket, symbol: str = "EUR/USD"):
+    origin = client_ws.headers.get("origin", "")
+    if origin not in ALLOWED_ORIGINS:
+        await client_ws.close(code=1008)
+        return
     await client_ws.accept()
     if symbol not in ALLOWED_SYMBOLS:
         await client_ws.send_json({"event": "error", "message": "Unsupported pair"})
