@@ -8,8 +8,8 @@ from typing import Any
 
 import httpx
 import websockets
-from fastapi import FastAPI, File, HTTPException, UploadFile, WebSocket, WebSocketDisconnect
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi import Body, FastAPI, File, HTTPException, UploadFile, WebSocket, WebSocketDisconnect
+from fastapi.middleware.cors import CORSMiddleware\n\nfrom multitimeframe import analyse_multitimeframe
 
 APP_NAME = "Quotex AI Market Data API"
 API_KEY = os.getenv("TWELVEDATA_API_KEY", "").strip()
@@ -80,7 +80,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
     allow_credentials=False,
-    allow_methods=["GET"],
+    allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
 
@@ -289,3 +289,12 @@ async def vision_predict(image: UploadFile = File(...)):
         raise HTTPException(400, str(exc)) from exc
     except Exception as exc:
         raise HTTPException(500, "Vision model inference failed") from exc
+
+
+@app.post("/api/analysis/multitimeframe")
+async def multitimeframe_analysis(payload: dict = Body(...)):
+    """Analyse M1 candles across completed M1, M5, M15, M30 and H1 bars."""
+    try:
+        return analyse_multitimeframe(payload)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
