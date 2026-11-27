@@ -39,6 +39,7 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--data", default="data/chart_images")
     parser.add_argument("--out", default="models")
+    parser.add_argument("--val-data", default=None, help="Separate later-session validation folder")
     parser.add_argument("--epochs", type=int, default=12)
     parser.add_argument("--batch-size", type=int, default=24)
     parser.add_argument("--seed", type=int, default=42)
@@ -72,12 +73,25 @@ def main() -> None:
     if min(counts.values()) < 20:
         raise SystemExit("Every class needs at least 20 images; 100+ per class is recommended.")
 
-    n_val = max(1, int(len(base) * 0.2))
-    train_set, val_set = random_split(
-        base, [len(base) - n_val, n_val],
-        generator=torch.Generator().manual_seed(args.seed)
-    )
-    val_set.dataset = datasets.ImageFolder(root, transform=eval_tf)
+    if args.val_data:
+        val_root = Path(args.val_data)
+        if not val_root.exists():
+            raise SystemExit(f"Validation folder not found: {val_root}")
+        train_set = datasets.ImageFolder(root, transform=train_tf)
+        val_set = datasets.ImageFolder(val_root, transform=eval_tf)
+        if train_set.classes != val_set.classes:
+            raise SystemExit("Training and validation folders must contain exactly the same class folder names.")
+        if len(val_set) < len(val_set.classes) * 5:
+            raise SystemExit("Use at least 5 separate later-session validation images per class.")
+        print(f"Separate validation set: {len(train_set)} train / {len(val_set)} validation images.")
+    else:
+        n_val = max(1, int(len(base) * 0.2))
+        train_set, val_set = random_split(
+            base, [len(base) - n_val, n_val],
+            generator=torch.Generator().manual_seed(args.seed)
+        )
+        val_set.dataset = datasets.ImageFolder(root, transform=eval_tf)
+        print("WARNING: random split is debugging only; it may leak near-duplicate sessions and is not out-of-sample trading accuracy.")
     device = "cuda" if torch.cuda.is_available() else "cpu"
     train_loader = DataLoader(train_set, batch_size=args.batch_size, shuffle=True, num_workers=0)
     val_loader = DataLoader(val_set, batch_size=args.batch_size, shuffle=False, num_workers=0)
@@ -122,11 +136,28 @@ def main() -> None:
         dynamic_axes={"image": {0: "batch"}, "logits": {0: "batch"}},
         opset_version=17,
     )
-    (output / "labels.json").write_text(
-        json.dumps({"classes": checkpoint["classes"], "image_size": IMAGE_SIZE,
-                    "validation_accuracy": best}, indent=2),
-        encoding="utf-8"
-    )
+    # Save class-wise recall and confusion matrix for the selected checkpoint.
+    model.eval()
+    confusion = torch.zeros(len(checkpoint["classes"]), len(checkpoint["classes"]), dtype=torch.int64)
+    with torch.no_grad():
+        for images, labels in val_loader:
+            predictions = model(images.to(device)).argmax(1).cpu()
+            for actual, predicted in zip(labels, predictions):
+                confusion[int(actual), int(predicted)] += 1
+    per_class_recall = {}
+    for index, name in enumerate(checkpoint["classes"]):
+        support = int(confusion[index].sum())
+        per_class_recall[name] = float(confusion[index, index]) / support if support else None
+    evaluation = {
+        "classes": checkpoint["classes"],
+        "image_size": IMAGE_SIZE,
+        "validation_accuracy": best,
+        "validation_type": "separate_later_session" if args.val_data else "random_split_debug_only",
+        "per_class_recall": per_class_recall,
+        "confusion_matrix": confusion.tolist(),
+    }
+    (output / "labels.json").write_text(json.dumps(evaluation, indent=2), encoding="utf-8")
+    (output / "evaluation.json").write_text(json.dumps(evaluation, indent=2), encoding="utf-8")
     print(f"Exported {output/'quotex-chart.onnx'}; validation accuracy={best:.3f}")
     print("Evaluate on a separate unseen chronological test set before using predictions.")
     
