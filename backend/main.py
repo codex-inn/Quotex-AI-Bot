@@ -294,6 +294,25 @@ async def vision_predict(image: UploadFile = File(...)):
         raise HTTPException(500, "Vision model inference failed") from exc
 
 
+@app.post("/api/vision/trend")
+async def trend_vision_predict(image: UploadFile = File(...)):
+    """Experimental HOG/SVM trend classifier trained on auto-labelled screenshots."""
+    if image.content_type not in {"image/png", "image/jpeg", "image/webp"}:
+        raise HTTPException(415, "Upload a PNG, JPEG or WebP chart screenshot")
+    raw = await image.read(8 * 1024 * 1024 + 1)
+    if len(raw) > 8 * 1024 * 1024:
+        raise HTTPException(413, "Image exceeds the 8 MB upload limit")
+    try:
+        from trend_vision import predict_trend
+        return predict_trend(raw)
+    except FileNotFoundError as exc:
+        raise HTTPException(503, str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(500, "Trend model inference failed") from exc
+
+
 @app.post("/api/analysis/multitimeframe")
 async def multitimeframe_analysis(payload: dict = Body(...)):
     """Analyse M1 candles across completed M1, M5, M15, M30 and H1 bars."""
