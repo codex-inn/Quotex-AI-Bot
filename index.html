@@ -100,10 +100,10 @@ function analyze(){
  }
  const r=evaluate(candles,+$('threshold').value),ind=r.ind,last=candles.at(-1);lastResult=r;
  const imageOnly=window.analysisSource==='image';
- const signal=imageOnly?'WAIT':r.signal;
+ const signal=r.signal;
  $('signal').textContent=signal;$('signal').className=signal==='CALL'?'call':signal==='PUT'?'put':'neutral';
  $('score').textContent=r.score+' / 5';$('meter').style.width=(r.score/5*100)+'%';
- const notes=imageOnly?['Screenshot candle extraction is approximate pixel geometry, not verified OHLC data.','No CALL / PUT signal is issued from screenshot estimates.','Import real OHLC candles from a CSV or connect a genuine data feed for signal calculations.']:r.reasons;
+ const notes=imageOnly?['Screenshot candle extraction is approximate pixel geometry, not verified OHLC data.','Directional result is a visual estimate; confirm against the live chart.'].concat(r.reasons):r.reasons;
  $('reasons').replaceChildren(...notes.map(t=>{const d=document.createElement('div');d.className='reason';d.textContent='• '+t;return d}));
  $('patterns').replaceChildren(...(r.patterns.length?r.patterns.map(p=>{const x=document.createElement('span');x.className='pill';x.textContent=p.name;return x}):[Object.assign(document.createElement('span'),{className:'pill',textContent:'No clear pattern'})]));
  $('rsi').textContent=ind.rsi.toFixed(1);$('rsi2').textContent=ind.rsi.toFixed(1);$('macd').textContent=ind.mac>ind.sig?'Bullish':'Bearish';$('trend').textContent=ind.e9.at(-1)>ind.e21.at(-1)?'Bullish':'Bearish';
