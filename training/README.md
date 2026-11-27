@@ -68,3 +68,18 @@ py training/extract_pdf_knowledge.py --input knowledge/pdfs --out knowledge/pdf_
 ```
 
 The script preserves page-numbered extracted text and reports unreadable/scanned PDFs. Review and curate definitions before using them in a training dataset. PDF prose is not labelled chart imagery and is not a next-candle outcome dataset. It must not be treated as model training labels or as proof of a profitable strategy.
+
+
+## Install the experimental screenshot trend model in the backend
+
+The separately trained HOG/SVM model is **not** the ResNet18 ONNX model. Keep it separate.
+Copy `trend_classifier.joblib` from the generated experimental training package to
+`backend/models/quotex-trend.joblib` (or set `TREND_MODEL_PATH`). The FastAPI endpoint
+`POST /api/vision/trend` then loads that artifact. The website's Backend AI button calls
+this endpoint after `window.QUOTEX_API_BASE` is configured in `config.js`.
+
+The current 98-image dataset uses automatically generated pixel-trend labels, not
+expert-confirmed chart patterns or next-candle outcome labels. Its validation score is
+agreement with those heuristic labels only. It is not a win rate and must not be used
+to claim a trading edge. Sideways/mixed returns INSUFFICIENT DATA rather than forcing a
+direction. Do not expose API secrets in frontend JavaScript.
