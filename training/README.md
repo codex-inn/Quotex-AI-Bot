@@ -56,3 +56,15 @@ Example request body:
 The example shows the required shape only; at least 60 unique, timezone-aware, one-minute candles are required. For H1 to become ready, provide at least 30 complete hourly bars (1,800 consecutive one-minute candles). Missing minutes cause incomplete higher-timeframe bars to be excluded. Only completed bars are analysed; optional `as_of` accepts an ISO-8601 timestamp and bars not yet closed at that time are dropped.
 
 The API returns a per-timeframe direction and an overall CALL/PUT/WAIT label. It returns CALL or PUT only when all five timeframes are ready and aligned; otherwise it returns WAIT. This is a transparent technical-analysis rule, not a trained ML model, calibrated probability, or validated trading edge. Spot FX and Quotex OTC data must remain separately identified; do not combine markets as if their prices were interchangeable.
+
+
+## PDF reference knowledge extraction
+
+Place readable, licensed reference PDFs in `knowledge/pdfs/`, then run:
+
+```powershell
+py -m pip install pypdf
+py training/extract_pdf_knowledge.py --input knowledge/pdfs --out knowledge/pdf_knowledge.json
+```
+
+The script preserves page-numbered extracted text and reports unreadable/scanned PDFs. Review and curate definitions before using them in a training dataset. PDF prose is not labelled chart imagery and is not a next-candle outcome dataset. It must not be treated as model training labels or as proof of a profitable strategy.
