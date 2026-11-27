@@ -1,0 +1,129 @@
+{
+  "schema_version": 1,
+  "description": "Page-indexed topic map from readable user-provided PDF references. Reference material only; not model labels or validated trading rules.",
+  "sources": [
+    {
+      "file": "THE CANDLESTICK TRADING BIBLE - the-candlestick-trading-bible-(KohanFx.com).pdf",
+      "topics": [
+        {
+          "topic": "Candlestick basics and pattern catalogue",
+          "pages": [
+            11,
+            14
+          ]
+        },
+        {
+          "topic": "Engulfing patterns",
+          "pages": [
+            16,
+            109,
+            112
+          ]
+        },
+        {
+          "topic": "Doji and variants",
+          "pages": [
+            20,
+            22,
+            25
+          ]
+        },
+        {
+          "topic": "Morning Star and Evening Star",
+          "pages": [
+            28,
+            31
+          ]
+        },
+        {
+          "topic": "Hammer and Shooting Star",
+          "pages": [
+            34,
+            37
+          ]
+        },
+        {
+          "topic": "Market structure, trends, support/resistance, trendlines and ranges",
+          "pages": [
+            51,
+            54,
+            58,
+            61,
+            63
+          ]
+        },
+        {
+          "topic": "Pin bars and confluence",
+          "pages": [
+            88,
+            96
+          ]
+        },
+        {
+          "topic": "Money management rules",
+          "pages": [
+            130
+          ]
+        }
+      ]
+    },
+    {
+      "file": "905094369-SURE-SHOT.pdf",
+      "topics": [
+        {
+          "topic": "Doji variants",
+          "pages": [
+            1
+          ]
+        },
+        {
+          "topic": "Bullish, bearish and neutral candle examples",
+          "pages": [
+            2,
+            3
+          ]
+        },
+        {
+          "topic": "Pattern table; continuation/reversal and market context labels",
+          "pages": [
+            4,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "file": "681139140-Topics-02.pdf",
+      "topics": [
+        {
+          "topic": "Extractable educational material; inspect original pages",
+          "pages": [
+            1,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "file": "682731811-SURESHOT-PATTERN-pdf-1.pdf",
+      "topics": [
+        {
+          "topic": "Pattern reference illustrations; limited text extraction",
+          "pages": [
+            1,
+            5
+          ]
+        }
+      ]
+    }
+  ],
+  "unreadable_sources": [
+    "Identifying Chart Patterns with Technical Analysis - Idenitfying-Chart-Patterns.pdf",
+    "Article [QIN33]_ Enhance Your Trading Skills with Effective Quotex Strategies - 44cf0abca796e77ceaacd0078e5db39d0bdb04a2.pdf",
+    "Microsoft Word - Jim_ebook0602.doc - jim_ebook0602.pdf",
+    "Trading Systems and Methods - TSaM.pdf",
+    "PowerPoint Presentation - B.Com(Hons)_IIIyearVIsem_FundamentalsofInvestments_Week2_DrKanuJain.pdf",
+    "822101891-Binary-Quotex-25-Sure-Shop-Pattern.pdf"
+  ],
+  "warning": "PDFs provide educational descriptions and examples, not labelled screenshot training data or verified future candle outcomes. Do not infer predictive accuracy from pattern names."
+}
