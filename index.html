@@ -242,9 +242,9 @@ $('backendVision').addEventListener('click',async()=>{
  try{
   const cv=document.createElement('canvas');cv.width=uploadedChartImage.naturalWidth;cv.height=uploadedChartImage.naturalHeight;cv.getContext('2d').drawImage(uploadedChartImage,0,0);const blob=await new Promise(resolve=>cv.toBlob(resolve,'image/jpeg',.92));
   const form=new FormData();form.append('image',blob,'chart.jpg');
-  const response=await fetch(base+'/api/vision/predict',{method:'POST',body:form});
+  const response=await fetch(base+'/api/vision/trend',{method:'POST',body:form});
   const data=await response.json();if(!response.ok)throw Error(data.detail||'Backend request failed');
-  $('visionResults').textContent='Backend AI: '+data.signal+' · class '+data.class+' · model score '+(data.score*100).toFixed(1)+'%. '+data.warning;
+  $('visionResults').textContent='Backend trend AI: '+data.signal+' · class '+data.class+' · model score '+(data.score*100).toFixed(1)+'%. '+data.warning;
  }catch(e){$('visionResults').textContent='Backend inference unavailable: '+e.message}
 });
 $('chartImage').addEventListener('change',()=>{const f=$('chartImage').files&&$('chartImage').files[0];if(f){$('browserVision').disabled=false;$('backendVision').disabled=false}});
