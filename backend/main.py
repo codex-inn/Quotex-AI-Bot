@@ -10,7 +10,9 @@ import httpx
 import websockets
 from fastapi import Body, FastAPI, File, HTTPException, UploadFile, WebSocket, WebSocketDisconnect
 from fastapi.responses import Response
-from fastapi.middleware.cors import CORSMiddleware\n\nfrom multitimeframe import analyse_multitimeframe
+from fastapi.middleware.cors import CORSMiddleware
+
+from multitimeframe import analyse_multitimeframe
 
 APP_NAME = "Quotex AI Market Data API"
 API_KEY = os.getenv("TWELVEDATA_API_KEY", "").strip()
