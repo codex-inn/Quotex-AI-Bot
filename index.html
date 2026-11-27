@@ -59,7 +59,7 @@ main{max-width:1480px;margin:auto;padding:27px clamp(13px,3vw,38px) 55px}.top{di
  <div class="image-result">
   <div class="panel-head"><h2>Visual chart signal</h2><span class="pill">ESTIMATE ONLY</span></div>
   <div class="muted tiny">IMAGE-BASED DIRECTION</div>
-  <strong id="imageSignal" class="neutral">WAIT</strong>
+  <strong id="imageSignal" class="neutral">INSUFFICIENT DATA</strong>
   <div id="imageDetails" class="reason">Upload a chart screenshot to begin.</div>
   <div class="notice" style="margin-top:10px">The analyser estimates candle geometry from the screenshot and calculates patterns and indicators from relative pixel-derived OHLC. Exact market prices cannot be recovered reliably from pixels alone. Confirm extracted candles before acting.</div>
  </div>
@@ -102,7 +102,7 @@ function analyze(){
  const imageOnly=window.analysisSource==='image';
  const signal=imageOnly?'WAIT':r.signal;
  $('signal').textContent=signal;$('signal').className=signal==='CALL'?'call':signal==='PUT'?'put':'neutral';
- $('score').textContent=imageOnly?'—':r.score+' / 5';$('meter').style.width=imageOnly?'0%':(r.score/5*100)+'%';
+ $('score').textContent=r.score+' / 5';$('meter').style.width=(r.score/5*100)+'%';
  const notes=imageOnly?['Screenshot candle extraction is approximate pixel geometry, not verified OHLC data.','No CALL / PUT signal is issued from screenshot estimates.','Import real OHLC candles from a CSV or connect a genuine data feed for signal calculations.']:r.reasons;
  $('reasons').replaceChildren(...notes.map(t=>{const d=document.createElement('div');d.className='reason';d.textContent='• '+t;return d}));
  $('patterns').replaceChildren(...(r.patterns.length?r.patterns.map(p=>{const x=document.createElement('span');x.className='pill';x.textContent=p.name;return x}):[Object.assign(document.createElement('span'),{className:'pill',textContent:'No clear pattern'})]));
@@ -110,7 +110,7 @@ function analyze(){
  $('ema9').textContent=format(ind.e9.at(-1));$('ema21').textContent=format(ind.e21.at(-1));$('ema50').textContent=format(ind.e50.at(-1));$('macd2').textContent=ind.mac.toFixed(6)+' / '+ind.sig.toFixed(6);
  $('price').textContent=imageOnly?'Relative px '+format(last.close):format(last.close);$('lastPrice').textContent=imageOnly?'Relative px '+format(last.close):format(last.close);
  $('resistance').textContent=format(r.levels.res);$('support').textContent=format(r.levels.sup);$('structure').textContent=last.close>r.levels.res?'Above resistance':last.close<r.levels.sup?'Below support':'Between key levels';
- $('delta').textContent=imageOnly?'SCREENSHOT ESTIMATE · NOT A SIGNAL':window.analysisSource==='csv'?'VERIFIED OHLC CSV':window.analysisSource==='live_otc'?'LIVE QUOTEX OTC':window.analysisSource==='live_spot'?'LIVE SPOT FX':'NO MARKET DATA';
+ $('delta').textContent=imageOnly?'SCREENSHOT ESTIMATE · VISUAL BIAS':window.analysisSource==='csv'?'VERIFIED OHLC CSV':window.analysisSource==='live_otc'?'LIVE QUOTEX OTC':window.analysisSource==='live_spot'?'LIVE SPOT FX':'NO MARKET DATA';
  $('pairTitle').textContent=$('pair').value+' · '+$('tf').value.toUpperCase();$('count').textContent=candles.length;renderChart();
 }
 function clearData(){candles=[];imported=false;lastResult=null;window.analysisSource='none';$('signal').textContent='INSUFFICIENT DATA';$('signal').className='neutral';$('score').textContent='0 / 5';$('meter').style.width='0%';$('reasons').textContent='Upload a chart screenshot or import real OHLC candles. No synthetic demo data is loaded.';$('patterns').innerHTML='<span class="pill">Waiting for real chart input</span>';$('price').textContent='—';$('delta').textContent='NO MARKET DATA';$('lastPrice').textContent='—';$('count').textContent='0';$('rsi').textContent='—';$('rsi2').textContent='—';$('macd').textContent='—';$('trend').textContent='—';$('ema9').textContent='—';$('ema21').textContent='—';$('ema50').textContent='—';$('macd2').textContent='—';$('support').textContent='—';$('resistance').textContent='—';$('structure').textContent='—';$('btTrades').textContent='—';$('btWin').textContent='—';$('btNet').textContent='—';$('btWL').textContent='—';$('btNote').textContent='No synthetic data. Import a real OHLC CSV or upload a chart screenshot.';$('notice').textContent='NO LIVE MARKET FEED CONNECTED. This website analyses only the chart screenshot or OHLC CSV you provide. Screenshot-derived values are relative pixel estimates, not verified market prices. No synthetic candles or live OTC prices are displayed.';const cv=$('chart');if(cv){const ctx=cv.getContext('2d');ctx.clearRect(0,0,cv.width,cv.height);ctx.fillStyle='#91a3bc';ctx.font='13px system-ui';ctx.textAlign='center';ctx.fillText('Upload a chart screenshot or import OHLC CSV',cv.width/2,cv.height/2)}}
@@ -187,7 +187,7 @@ $('imageAnalyze').addEventListener('click',()=>{
   $('imageSignal').className=r.signal==='CALL'?'call':r.signal==='PUT'?'put':'neutral';
   $('imageDetails').textContent='Extracted '+extracted.length+' candle-like shapes from the screenshot. '+(extracted.length<30?'Not enough history for a robust indicator signal; upload a wider chart view.':'Pattern scan: '+(r.patterns.map(p=>p.name).join(', ')||'no clear named pattern')+'. EMA/RSI/MACD and trend calculations are now based on extracted screenshot candle geometry. Relative levels only; visual extraction can make mistakes.');
  }catch(err){
-  $('imageSignal').textContent='WAIT';$('imageSignal').className='neutral';
+  $('imageSignal').textContent='INSUFFICIENT DATA';$('imageSignal').className='neutral';
   $('imageDetails').textContent='Image processing failed: '+(err&&err.message?err.message:'unknown error')+'. Try a standard PNG/JPG screenshot.';
  }
 });
